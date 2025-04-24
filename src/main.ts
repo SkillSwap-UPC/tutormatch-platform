@@ -9,7 +9,14 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   
   // Habilitar CORS para el desarrollo
-  app.enableCors();
+  app.enableCors({
+    origin: 'https://stellar-reflection-production.up.railway.app/', 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    credentials: true,
+    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+  });
   
   // Configurar Swagger
   setupOpenApi(app);
