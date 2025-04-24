@@ -7,6 +7,9 @@ import { AppService } from './app.service';
 import { UsersModule } from './Users/Users.module';
 import { TutoringsModule } from './Tutorings/Tutorings.module';
 
+import * as crypto from 'crypto';
+global.crypto = crypto as any;
+
 @Module({
   controllers: [
     RootController,
