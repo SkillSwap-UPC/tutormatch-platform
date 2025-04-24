@@ -11,7 +11,7 @@ export function setupOpenApi(app: INestApplication) {
       'SkillSwapINC TutorMatch Documentation', 
       'https://github.com/SkillSwapINC/TutorMatch-Report'
     )
-    .addServer('http://localhost:3000', 'Local server')
+    .addServer('http://stellar-reflection-production.up.railway.app', 'Railway Server')
     .build();
     
   const document = SwaggerModule.createDocument(app, config);
