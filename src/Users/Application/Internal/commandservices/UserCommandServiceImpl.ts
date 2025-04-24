@@ -19,7 +19,7 @@ export class UserCommandServiceImpl implements UserCommandService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   /**
    * Implementation to handle different command types.
@@ -45,36 +45,37 @@ export class UserCommandServiceImpl implements UserCommandService {
    * @return the created user if successful, or null if not.
    * @throws Error if a user with the specified email already exists.
    */
-    private async handleCreateUser(command: CreateUserCommand): Promise<User | null> {
-      try {
-        // Usar el nombre de la columna generada por TypeORM para objetos embebidos
-        const existingUser = await this.userRepository.createQueryBuilder('user')
-          .where('user.email_address = :email', { email: command.email })
-          .getOne();
-        
-        if (existingUser) {
-          console.error(`User with email ${command.email} already exists`);
-          return null;
-        }
-        
-        const user = User.fromCommand(command);
-        
-        if (command.roleType === RoleType.TEACHER) {
-          const maxResult = await this.userRepository
-            .createQueryBuilder('user')
-            .select('COALESCE(MAX(user.tutorId), 0)', 'maxId')
-            .getRawOne();
-          
-          const nextTutorId = (maxResult && maxResult.maxId ? Number(maxResult.maxId) : 0) + 1;
-          user.setTutorId(nextTutorId);
-        }
-        
-        return await this.userRepository.save(user);
-      } catch (error) {
-        console.error('Error creating user:', error);
-        throw error;
+  private async handleCreateUser(command: CreateUserCommand): Promise<User | null> {
+    try {
+      // Usar QueryBuilder en lugar de find() para consultar campos embebidos
+      const existingUser = await this.userRepository
+        .createQueryBuilder('user')
+        .where("user.email->>'address' = :email", { email: command.email })
+        .getOne();
+  
+      if (existingUser) {
+        console.error(`User with email ${command.email} already exists`);
+        return null;
       }
+  
+      const user = User.fromCommand(command);
+  
+      if (command.roleType === RoleType.TEACHER) {
+        const maxResult = await this.userRepository
+          .createQueryBuilder('user')
+          .select('COALESCE(MAX(user.tutorId), 0)', 'maxId')
+          .getRawOne();
+  
+        const nextTutorId = (maxResult && maxResult.maxId ? Number(maxResult.maxId) : 0) + 1;
+        user.setTutorId(nextTutorId);
+      }
+  
+      return await this.userRepository.save(user);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
     }
+  }
 
   /**
    * Handles updating user attributes (avatar, gender, and semester) based on the provided
@@ -86,14 +87,14 @@ export class UserCommandServiceImpl implements UserCommandService {
    */
   private async handleUpdateUser(command: UpdateUserCommand): Promise<User | null> {
     const user = await this.userRepository.findOneBy({ id: command.id });
-    
+
     if (!user) {
       throw new Error(`User with id ${command.id} not found`);
     }
-    
+
     user.updateUserAttributes(command);
     await this.userRepository.save(user);
-    
+
     return user;
   }
 }
