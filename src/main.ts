@@ -10,7 +10,7 @@ async function bootstrap() {
   
   // Habilitar CORS para el desarrollo
   app.enableCors({
-    origin: 'https://stellar-reflection-production.up.railway.app/', 
+    origin: 'https://stellar-reflection-production.up.railway.app', 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,

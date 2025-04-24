@@ -24,7 +24,7 @@ import { Password } from '../../Domain/Model/ValueObjects/Password';
  * Provides endpoints for creating, retrieving, and managing user data.
  */
 @ApiTags('Users')
-@Controller('/api/v1')
+@Controller('api/v1')
 export class UsersController {
   constructor(
     @Inject('UserCommandService')
