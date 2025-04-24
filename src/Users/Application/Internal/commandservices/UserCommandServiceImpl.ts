@@ -45,32 +45,37 @@ export class UserCommandServiceImpl implements UserCommandService {
    * @return the created user if successful, or null if not.
    * @throws Error if a user with the specified email already exists.
    */
-  private async handleCreateUser(command: CreateUserCommand): Promise<User | null> {
-    const emailAddress = new EmailAddress(command.email);
-    const password = new Password(command.password);
-    
-    const existingUser = await this.userRepository.createQueryBuilder('user')
-      .where('user.email.address = :email', { email: emailAddress.address })
-      .getOne();
-    
-    if (existingUser) {
-      throw new Error(`User with this email ${command.email} already exists`);
-    }
-    
-    const user = User.fromCommand(command);
-    
-    if (command.roleType === RoleType.TEACHER) {
-      const maxResult = await this.userRepository
-        .createQueryBuilder('user')
-        .select('MAX(user.tutorId)', 'maxId')
-        .getRawOne();
+    private async handleCreateUser(command: CreateUserCommand): Promise<User | null> {
+    try {
+      const emailAddress = new EmailAddress(command.email);
       
-      const nextTutorId = ((maxResult && maxResult.maxId) || 0) + 1;
-      user.setTutorId(nextTutorId);
+      // Forma correcta de buscar en campos embebidos con TypeORM
+      const existingUser = await this.userRepository.createQueryBuilder('user')
+        .where('user.email.address = :email', { email: command.email })
+        .getOne();
+      
+      if (existingUser) {
+        console.error(`User with email ${command.email} already exists`);
+        return null;
+      }
+      
+      const user = User.fromCommand(command);
+      
+      if (command.roleType === RoleType.TEACHER) {
+        const maxResult = await this.userRepository
+          .createQueryBuilder('user')
+          .select('COALESCE(MAX(user.tutorId), 0)', 'maxId')
+          .getRawOne();
+        
+        const nextTutorId = (maxResult && maxResult.maxId ? Number(maxResult.maxId) : 0) + 1;
+        user.setTutorId(nextTutorId);
+      }
+      
+      return await this.userRepository.save(user);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error; // Es mejor lanzar el error para que el controlador pueda manejarlo
     }
-    
-    await this.userRepository.save(user);
-    return user;
   }
 
   /**

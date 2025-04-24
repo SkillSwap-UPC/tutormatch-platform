@@ -45,16 +45,24 @@ export class UsersController {
   })
   @ApiResponse({ status: 201, description: 'User created', type: UserResource })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async createUser(@Body() resource: CreateUserResource, @Res() response: Response) {
-    const createUserCommand = CreateUserCommandFromResourceAssembler.toCommandFromResource(resource);
-    const user = await this.userCommandService.handle(createUserCommand);
-    
-    if (!user) {
-      return response.status(HttpStatus.BAD_REQUEST).send();
+    try {
+      const createUserCommand = CreateUserCommandFromResourceAssembler.toCommandFromResource(resource);
+      const user = await this.userCommandService.handle(createUserCommand);
+      
+      if (!user) {
+        return response.status(HttpStatus.BAD_REQUEST)
+          .json({ message: 'Could not create user. The email may already be in use.' });
+      }
+      
+      const userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+      return response.status(HttpStatus.CREATED).json(userResource);
+    } catch (error) {
+      console.error('Error in createUser controller:', error);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'An unexpected error occurred while creating the user.' });
     }
-    
-    const userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
-    return response.status(HttpStatus.CREATED).json(userResource);
   }
 
   /**
